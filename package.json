@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Docker-free SonarQube MCP server over stdio.",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yozzone/sonarqube-mcp.git"
+  },
+  "homepage": "https://github.com/yozzone/sonarqube-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/yozzone/sonarqube-mcp/issues"
+  },
   "bin": {
     "sonarqube-mcp": "dist/index.js"
   },
@@ -22,6 +30,9 @@
   ],
   "author": "",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=20"
   },
