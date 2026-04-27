@@ -1,11 +1,11 @@
-# sonarqube-mcp
+# sonarqube-api-mcp
 
 Docker-free SonarQube MCP server for read-only access to the SonarQube Web API.
 
 Run it with:
 
 ```bash
-npx sonarqube-mcp
+npx sonarqube-api-mcp
 ```
 
 ## Requirements
@@ -35,7 +35,7 @@ Startup fails clearly when `SONAR_HOST_URL` or `SONAR_TOKEN` is missing.
   "mcpServers": {
     "sonarqube": {
       "command": "npx",
-      "args": ["-y", "sonarqube-mcp"],
+      "args": ["-y", "sonarqube-api-mcp"],
       "env": {
         "SONAR_HOST_URL": "https://sonarqube.yourcompany.com",
         "SONAR_TOKEN": "YOUR_SONAR_TOKEN",
@@ -62,7 +62,7 @@ Then point your MCP client at the compiled entrypoint:
   "mcpServers": {
     "sonarqube-local": {
       "command": "node",
-      "args": ["/absolute/path/to/sonarqube-mcp/dist/index.js"],
+      "args": ["/absolute/path/to/sonarqube-api-mcp/dist/index.js"],
       "env": {
         "SONAR_HOST_URL": "https://sonarqube.yourcompany.com",
         "SONAR_TOKEN": "YOUR_SONAR_TOKEN",
@@ -82,7 +82,7 @@ Set `SONAR_PROJECT_KEY` once and omit `projectKey` from project-scoped tool call
   "mcpServers": {
     "sonarqube": {
       "command": "npx",
-      "args": ["-y", "sonarqube-mcp"],
+      "args": ["-y", "sonarqube-api-mcp"],
       "env": {
         "SONAR_HOST_URL": "https://sonarqube.yourcompany.com",
         "SONAR_TOKEN": "YOUR_SONAR_TOKEN",

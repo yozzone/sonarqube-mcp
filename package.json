@@ -1,5 +1,5 @@
 {
-  "name": "sonarqube-mcp",
+  "name": "sonarqube-api-mcp",
   "version": "0.1.0",
   "description": "Docker-free SonarQube MCP server over stdio.",
   "type": "module",
@@ -12,6 +12,7 @@
     "url": "https://github.com/yozzone/sonarqube-mcp/issues"
   },
   "bin": {
+    "sonarqube-api-mcp": "dist/index.js",
     "sonarqube-mcp": "dist/index.js"
   },
   "files": [
