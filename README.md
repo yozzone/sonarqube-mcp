@@ -16,6 +16,14 @@ npx sonarqube-api-mcp
 
 This package uses the public SonarQube Web API only. It does not use private SonarQube UI GraphQL endpoints.
 
+It is designed for coding-agent workflows like:
+
+- "fix all new code issues"
+- "fix all overall code issues"
+- "fix issues for this SonarQube project name"
+
+The server stays read-only: it fetches SonarQube issues, source context, rule details, and quality data so the calling agent can edit the checked-out repository.
+
 ## Configuration
 
 Configure the server entirely through environment variables in `mcp.json`.
@@ -24,7 +32,7 @@ Configure the server entirely through environment variables in `mcp.json`.
 | --- | --- | --- |
 | `SONAR_HOST_URL` | Yes | SonarQube base URL. Trailing slashes are normalized. |
 | `SONAR_TOKEN` | Yes | SonarQube token. Sent as Basic Auth using `Authorization: Basic base64("${SONAR_TOKEN}:")`. |
-| `SONAR_PROJECT_KEY` | No | Default project key used by project-scoped tools when `projectKey` is omitted. |
+| `SONAR_PROJECT_KEY` | No | Default project key used by project-scoped tools when `projectKey` and `projectName` are omitted. |
 
 Startup fails clearly when `SONAR_HOST_URL` or `SONAR_TOKEN` is missing.
 
@@ -102,9 +110,9 @@ Example tool input:
 }
 ```
 
-## Per-tool projectKey override
+## Per-tool project override
 
-Every project-scoped tool accepts `projectKey`, which overrides `SONAR_PROJECT_KEY` for that call.
+Every project-scoped tool accepts `projectKey` or `projectName`, which override `SONAR_PROJECT_KEY` for that call.
 
 ```json
 {
@@ -114,7 +122,93 @@ Every project-scoped tool accepts `projectKey`, which overrides `SONAR_PROJECT_K
 }
 ```
 
+If your infrastructure creates a SonarQube project per branch, pass the SonarQube project name directly:
+
+```json
+{
+  "projectName": "repo-name-feature-branch",
+  "scope": "new_code"
+}
+```
+
+If a name matches multiple projects, the tool returns candidates and asks the caller to retry with `projectKey`.
+
 ## Tools
+
+### `search_sonar_projects`
+
+Searches `/api/projects/search` to find project keys by SonarQube project name or key.
+
+Inputs:
+
+- `query` optional string
+- `pageSize` optional number, defaults to `100`
+
+### `get_sonar_fix_plan`
+
+Gets unresolved issues grouped by file for agentic fixing workflows.
+
+Use this for prompts like "fix all new code issues" or "fix all overall code issues".
+
+Inputs:
+
+- `projectKey` optional, falls back to `SONAR_PROJECT_KEY`
+- `projectName` optional, resolved through `/api/projects/search`
+- `scope` optional, `new_code` or `overall`, defaults to `new_code`
+- `branch` optional
+- `pullRequest` optional
+- `severities` optional string array
+- `statuses` optional string array
+- `types` optional string array
+- `impactSeverities` optional string array for newer SonarQube versions
+- `impactSoftwareQualities` optional string array for newer SonarQube versions
+- `pageSize` optional number, defaults to `100`
+- `maxIssues` optional number, defaults to `200`
+- `includeSource` optional boolean, defaults to `true`
+- `includeRules` optional boolean, defaults to `false`
+- `contextLines` optional number, defaults to `5`
+
+Example for new code:
+
+```json
+{
+  "projectName": "hvmb-app-feature-branch",
+  "scope": "new_code",
+  "includeSource": true,
+  "includeRules": true
+}
+```
+
+Example for overall code:
+
+```json
+{
+  "projectKey": "hvmb-app",
+  "scope": "overall",
+  "maxIssues": 500
+}
+```
+
+Returns clean JSON with:
+
+- resolved project identity
+- issue count and truncation flag
+- optional rule details keyed by rule key
+- files sorted by issue count
+- issues per file
+- merged source ranges around affected lines
+
+### `get_sonar_issue_context`
+
+Gets one issue plus surrounding source lines and optional rule details.
+
+Inputs:
+
+- `issueKey` required
+- `branch` optional
+- `pullRequest` optional
+- `contextLines` optional number, defaults to `5`
+- `includeRule` optional boolean, defaults to `true`
 
 ### `search_sonar_issues`
 
@@ -123,11 +217,15 @@ Searches `/api/issues/search` and handles pagination.
 Inputs:
 
 - `projectKey` optional, falls back to `SONAR_PROJECT_KEY`
+- `projectName` optional, resolved through `/api/projects/search`
 - `branch` optional
 - `pullRequest` optional
 - `severities` optional string array
 - `statuses` optional string array
 - `types` optional string array
+- `impactSeverities` optional string array for newer SonarQube versions
+- `impactSoftwareQualities` optional string array for newer SonarQube versions
+- `inNewCodePeriod` optional boolean
 - `resolved` optional boolean, defaults to `false`
 - `pageSize` optional number, defaults to `100`
 
@@ -140,6 +238,7 @@ Calls `/api/qualitygates/project_status`.
 Inputs:
 
 - `projectKey` optional, falls back to `SONAR_PROJECT_KEY`
+- `projectName` optional, resolved through `/api/projects/search`
 - `branch` optional
 - `pullRequest` optional
 
@@ -158,6 +257,7 @@ Calls `/api/measures/component`.
 Inputs:
 
 - `projectKey` optional, falls back to `SONAR_PROJECT_KEY`
+- `projectName` optional, resolved through `/api/projects/search`
 - `metricKeys` required string array
 - `branch` optional
 - `pullRequest` optional
